@@ -43,91 +43,7 @@ struct SheetContentView: UIViewControllerRepresentable {
     }
 }
 
-// Custom ScrollView that handles inverted gestures properly
-class InvertedScrollView: UIScrollView, UIGestureRecognizerDelegate {
-    private var customPanGesture: UIPanGestureRecognizer?
-    
-    override func awakeFromNib() {
-        super.awakeFromNib()
-        setupGestureHandling()
-    }
-    
-    override init(frame: CGRect) {
-        super.init(frame: frame)
-        setupGestureHandling()
-    }
-    
-    required init?(coder: NSCoder) {
-        super.init(coder: coder)
-        setupGestureHandling()
-    }
-    
-    private func setupGestureHandling() {
-        // Create a custom pan gesture that will compete with the sheet's gesture
-        customPanGesture = UIPanGestureRecognizer(target: self, action: #selector(handleCustomPan(_:)))
-        customPanGesture?.delegate = self
-        
-        if let customPan = customPanGesture {
-            addGestureRecognizer(customPan)
-            
-            // Make the scroll view's pan gesture require our custom gesture to fail
-            // This gives our custom gesture priority to evaluate first
-            panGestureRecognizer.require(toFail: customPan)
-        }
-    }
-    
-    @objc private func handleCustomPan(_ gesture: UIPanGestureRecognizer) {
-        // This gesture is designed to fail most of the time, but it evaluates first
-        // and can prevent the sheet gesture from triggering when needed
-        
-        let velocity = gesture.velocity(in: self)
-        let isAtTop = contentOffset.y <= 0
-        
-        // If we're at the top and user is panning up, we want to "consume" this gesture
-        // to prevent it from reaching the sheet
-        if isAtTop && velocity.y < 0 {
-            // We'll handle this gesture by doing nothing, effectively consuming it
-            return
-        }
-        
-        // For all other cases, we want this gesture to fail so the normal scroll behavior works
-        gesture.state = .failed
-    }
-    
-    // MARK: - UIGestureRecognizerDelegate
-    
-    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool {
-        // Allow simultaneous recognition with other gestures
-        return true
-    }
-    
-    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldBeRequiredToFailBy otherGestureRecognizer: UIGestureRecognizer) -> Bool {
-        // Our custom pan gesture should be required to fail by the scroll view's pan gesture
-        if gestureRecognizer == customPanGesture && otherGestureRecognizer == panGestureRecognizer {
-            return true
-        }
-        return false
-    }
-    
-    override func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
-        if gestureRecognizer == customPanGesture {
-            guard let panGesture = gestureRecognizer as? UIPanGestureRecognizer else {
-                return true
-            }
-            let velocity = panGesture.velocity(in: self)
-            let isAtTop = contentOffset.y <= 0
-            
-            // Only begin our custom gesture if we're at the top and panning up
-            // This is when we want to prevent the sheet gesture
-            return isAtTop && velocity.y < 0
-        }
-        
-        return true
-    }
-}
-
 class SheetViewController: UIViewController {
-    
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
@@ -141,11 +57,9 @@ class SheetViewController: UIViewController {
     private func setupUI() {
         view.backgroundColor = .systemBackground
         
-        // Create the inverted scroll view with custom gesture handling
-        let scrollView = InvertedScrollView()
+        // Create the inverted scroll view
+        let scrollView = UIScrollView()
         scrollView.translatesAutoresizingMaskIntoConstraints = false
-        scrollView.showsVerticalScrollIndicator = true
-        scrollView.alwaysBounceVertical = true
         
         // Apply the scale transform to invert the scroll view
         scrollView.transform = CGAffineTransform(scaleX: 1, y: -1)
