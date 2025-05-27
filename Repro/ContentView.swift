@@ -43,7 +43,7 @@ struct SheetContentView: UIViewControllerRepresentable {
     }
 }
 
-class SheetViewController: UIViewController {
+class SheetViewController: UIViewController, UIScrollViewDelegate {
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
@@ -53,14 +53,16 @@ class SheetViewController: UIViewController {
         super.viewDidAppear(animated)
         configureSheetPresentation()
     }
-    
+
+
     private func setupUI() {
         view.backgroundColor = .systemBackground
         
         // Create the inverted scroll view
         let scrollView = UIScrollView()
         scrollView.translatesAutoresizingMaskIntoConstraints = false
-        
+        scrollView.delegate = self;
+
         // Apply the scale transform to invert the scroll view
         scrollView.transform = CGAffineTransform(scaleX: 1, y: -1)
         
@@ -129,6 +131,13 @@ class SheetViewController: UIViewController {
         presentationController.prefersGrabberVisible = true
         presentationController.preferredCornerRadius = 16
     }
+
+  func scrollViewWillBeginDragging(_ scrollView: UIScrollView) {
+    if scrollView.contentOffset.y == 0 {
+      scrollView.contentOffset.y = 1
+    }
+  }
+
 }
 
 #Preview {
